@@ -131,7 +131,7 @@ export default class AddApp extends Command {
 
       const ports: Array<string> = composeObj.services[service].ports;
 
-      let portResponse: object = {};
+      let portResponse: any = {};
 
       if (ports.length > 1) {
         let choices: Array<object> = [];
