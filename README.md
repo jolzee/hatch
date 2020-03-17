@@ -23,7 +23,7 @@ $ npm install -g @jolzee/hatch
 $ hatch COMMAND
 running command...
 $ hatch (-v|--version|version)
-@jolzee/hatch/0.0.1 win32-x64 node-v13.9.0
+@jolzee/hatch/0.0.2 win32-x64 node-v13.9.0
 $ hatch --help [COMMAND]
 USAGE
   $ hatch COMMAND
@@ -62,7 +62,7 @@ EXAMPLE
   -n My App -i HelloWorld -p 8080
 ```
 
-_See code: [src\commands\add-app.ts](https://github.com/jolzee/hatch/blob/v0.0.1/src\commands\add-app.ts)_
+_See code: [src\commands\add-app.ts](https://github.com/jolzee/hatch/blob/v0.0.2/src\commands\add-app.ts)_
 
 ## `hatch help [COMMAND]`
 
