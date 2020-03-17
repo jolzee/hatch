@@ -167,21 +167,22 @@ export default class AddApp extends Command {
         data: string,
         stderr: any
       ) {
-        // if (err) {
-        //   that.handleError(err);
-        // }
+        if (err) {
+          that.handleError(err);
+        }
         cli.action.stop("Created");
+        console.log(data);
         cli.action.start(`Setting Config Variables`);
 
         cmd.get(
-          `dokku config:set --encode --no-restart ${appName} ${envVariablesFinal.join(
-            " "
-          )}`,
-          function(err: Error, data: string, stderr: any) {
-            // if (err) {
-            //   that.handleError(err);
-            // }
+          `dokku config:set --no-restart ${appName}
+dokku config:set --encode ${appName} ${envVariablesFinal.join(" ")}`,
+          function(err2: Error, data2: string, stderr2: any) {
+            if (err2) {
+              that.handleError(err2);
+            }
             cli.action.stop("Variables Set");
+            console.log(data2);
 
             cli.action.start(`Creating and Mounting Storage Volumes`);
 
@@ -194,34 +195,32 @@ export default class AddApp extends Command {
               appName,
               volumesFinal
             );
-            console.log(dirCommmands);
-            console.log(storageCommands);
+            // console.log(dirCommmands);
+            // console.log(storageCommands);
             cmd.get(
               `
               ${dirCommmands}${storageCommands}
               `,
-              function(err: Error, data: string, stderr: any) {
-                // if (err) {
-                //   that.handleError(err);
-                // }
+              function(err3: Error, data3: string, stderr3: any) {
+                if (err3) {
+                  that.handleError(err3);
+                }
                 cli.action.stop("Created and Mounted");
-
+                console.log(data3);
                 cli.action.start(
                   `Downloading and deploying '${imageName}' from Docker`
                 );
                 cmd.get(
-                  `
-                docker pull ${imageName}
-                docker tag ${imageName} dokku/${appName}:latest
-                dokku tags:deploy ${appName} latest
-                dokku proxy:ports-add ${appName} http:80:${portResponse.mapPort80To}
-                `,
-                  function(err: Error, data: string, stderr: any) {
-                    if (err) {
+                  `docker pull ${imageName}
+                    docker tag ${imageName} dokku/${appName}:latest
+                    dokku tags:deploy ${appName} latest
+                    dokku proxy:ports-add ${appName} http:80:${portResponse.mapPort80To}`,
+                  function(err4: Error, data4: string, stderr4: any) {
+                    if (err4) {
                       that.handleError(err);
                     }
                     cli.action.stop("Completed");
-                    console.log(data);
+                    console.log(data4);
                     // cli.action.start(
                     //   `Tagging '${imageName}' as 'dokku/${appName}'`
                     // );
