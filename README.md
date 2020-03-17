@@ -19,11 +19,11 @@ WIP - Don't use yet
 
 <!-- usage -->
 ```sh-session
-$ npm install -g hatch
+$ npm install -g @jolzee/hatch
 $ hatch COMMAND
 running command...
 $ hatch (-v|--version|version)
-hatch/0.0.1 win32-x64 node-v13.9.0
+@jolzee/hatch/0.0.1 win32-x64 node-v13.9.0
 $ hatch --help [COMMAND]
 USAGE
   $ hatch COMMAND

@@ -1,5 +1,5 @@
 {
-  "name": "hatch",
+  "name": "@jolzee/hatch",
   "description": "Creates Dokku Apps from Docker Compose files",
   "version": "0.0.1",
   "author": "Peter Joles @jolzee",
