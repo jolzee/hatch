@@ -1,0 +1,19 @@
+version: "3.4"
+services:
+  qbittorrent:
+    image: linuxserver/qbittorrent
+    container_name: qbittorrent
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los Angeles
+      - UMASK_SET=022
+      - WEBUI_PORT=8080
+    volumes:
+      - /home/jolzee/config/qbittorrent:/config
+      - /mnt/bucket/:/downloads
+    ports:
+      - 56739:6881
+      - 56739:6881/udp
+      - 8080:8080

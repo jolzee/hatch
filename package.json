@@ -1,0 +1,72 @@
+{
+  "name": "hatch",
+  "description": "Creates Dokku Apps from Docker Compose files",
+  "version": "0.0.0",
+  "author": "Peter Joles @jolzee",
+  "bin": {
+    "hatch": "./bin/run"
+  },
+  "bugs": "https://github.com/jolzee/hatch/issues",
+  "dependencies": {
+    "@oclif/command": "^1.5.19",
+    "@oclif/config": "^1.14.0",
+    "@oclif/plugin-help": "^2.2.3",
+    "@types/inquirer": "^6.5.0",
+    "chalk": "^3.0.0",
+    "cli-ux": "^5.4.5",
+    "inquirer": "^7.1.0",
+    "node-cmd": "^3.0.0",
+    "p-iteration": "^1.1.8",
+    "ssh2": "^0.8.9",
+    "tslib": "^1.11.1",
+    "yaml": "^1.8.2"
+  },
+  "devDependencies": {
+    "@oclif/dev-cli": "^1.22.2",
+    "@types/node": "^10.17.17",
+    "@types/yaml": "^1.2.0",
+    "eslint": "^5.16.0",
+    "eslint-config-oclif": "^3.1.0",
+    "eslint-config-oclif-typescript": "^0.1.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-plugin-prettier": "^3.1.2",
+    "globby": "^10.0.2",
+    "rimraf": "^3.0.2",
+    "ts-node": "^8.6.2",
+    "typescript": "^3.8.3"
+  },
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "files": [
+    "/bin",
+    "/lib",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json"
+  ],
+  "homepage": "https://github.com/jolzee/hatch",
+  "keywords": [
+    "oclif",
+    "dokku",
+    "cli",
+    "docker-compose"
+  ],
+  "license": "MIT",
+  "main": "lib/index.js",
+  "oclif": {
+    "commands": "./lib/commands",
+    "bin": "hatch",
+    "plugins": [
+      "@oclif/plugin-help"
+    ]
+  },
+  "repository": "jolzee/hatch",
+  "scripts": {
+    "postpack": "rimraf oclif.manifest.json",
+    "posttest": "eslint . --ext .ts --config .eslintrc",
+    "prepack": "rimraf lib && tsc -b && oclif-dev manifest && oclif-dev readme",
+    "test": "echo NO TESTS",
+    "version": "oclif-dev readme && git add README.md"
+  },
+  "types": "lib/index.d.ts"
+}
