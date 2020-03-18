@@ -1,4 +1,7 @@
 import { Command, flags } from "@oclif/command";
+const isRoot = require("is-root");
+var sudo = require("sudo-prompt");
+const { exec } = require("promisify-child-process");
 import cli from "cli-ux";
 import { parse } from "yaml";
 import { readFileSync } from "fs";
@@ -8,7 +11,7 @@ import * as inquirer from "inquirer";
 var cmd = require("node-cmd");
 
 export default class AddApp extends Command {
-  static description = "describe the command here";
+  static description = "Creates a running Dokku app from a docker-compose file";
   static aliases = ["app:create", "app:add"];
 
   static examples = [
@@ -62,24 +65,44 @@ export default class AddApp extends Command {
     let directoryCommands = "";
     volumes.forEach(volume => {
       let volumeInfo: string[] = volume.split(":");
-      directoryCommands += `mkdir -p ${volumeInfo[0]}\n`;
-      directoryCommands += `chown -R ${folderOwner}:${folderGroup} ${volumeInfo[0]}\n`;
+      directoryCommands += `sudo mkdir -p ${volumeInfo[0]} && `;
+      directoryCommands += `sudo chown -R ${folderOwner}:${folderGroup} ${volumeInfo[0]} && `;
     });
-    return directoryCommands;
+    return directoryCommands.substring(0, directoryCommands.length - 3);
   }
 
   generateStorageCommands(appName: string, volumes: string[]) {
     let storageCommands = "";
     volumes.forEach(volume => {
-      storageCommands += `dokku storage:mount ${appName} ${volume}\n`;
+      storageCommands += `sudo dokku storage:mount ${appName} ${volume} && `;
     });
-    return storageCommands;
+    return storageCommands.substring(0, storageCommands.length - 3);
+  }
+
+  async runCmd(cmd: string) {
+    return new Promise(async (resolve, reject) => {
+      exec(cmd, {
+        maxBuffer: 200 * 1024
+      })
+        .then((res: any) => {
+          console.log(res.stdout);
+          resolve(res.stdout);
+        })
+        .catch((error: any) => {
+          console.log(error.stdout);
+          resolve(error.stdout);
+        });
+    });
   }
 
   async run() {
+    // if (!isRoot()) {
+    //   this.warn("Please run as root");
+    //   this.exit();
+    // }
+
     const that = this;
     const { args, flags } = this.parse(AddApp);
-    const firstName = await cli.prompt("What is your name?");
     let fileName: string;
     if (args.file) {
       fileName = args.file;
@@ -133,7 +156,7 @@ export default class AddApp extends Command {
 
       let portResponse: any = {};
 
-      if (ports.length > 1) {
+      if (ports && ports.length > 1) {
         let choices: Array<object> = [];
         ports.forEach(port => {
           let portArr: Array<string> = port.split(":");
@@ -160,86 +183,49 @@ export default class AddApp extends Command {
       //   `Mapping ${portResponse.mapPort80To} to port 80 in Nginx`,
       //   portResponse
       // );
-
       cli.action.start(`Creating ${appName}`);
-      cmd.get(`dokku apps:create ${appName}`, function(
-        err: Error,
-        data: string,
-        stderr: any
-      ) {
-        if (err) {
-          that.handleError(err);
-        }
-        cli.action.stop("Created");
-        console.log(data);
-        cli.action.start(`Setting Config Variables`);
+      this.runCmd(`sudo dokku apps:create ${appName}`)
+        .then(() => {
+          cli.action.stop("Created");
+          cli.action.start(`Setting Config Variables`);
+          const setConfigCmd = `sudo dokku config:set --no-restart qbittorrent -encoded ${appName} ${envVariablesFinal.join(
+            " "
+          )}`;
+          console.log(setConfigCmd);
+          return this.runCmd(setConfigCmd);
+        })
+        .then(() => {
+          cli.action.stop("Variables Set");
+          cli.action.start(`Creating and Mounting Storage Volumes`);
 
-        cmd.get(
-          `dokku config:set --no-restart ${appName}
-dokku config:set --encode ${appName} ${envVariablesFinal.join(" ")}`,
-          function(err2: Error, data2: string, stderr2: any) {
-            if (err2) {
-              that.handleError(err2);
-            }
-            cli.action.stop("Variables Set");
-            console.log(data2);
+          const dirCommmands = that.generateDirCommands(
+            volumesFinal,
+            folderOwner,
+            folderGroup
+          );
+          const storageCommands = that.generateStorageCommands(
+            appName,
+            volumesFinal
+          );
 
-            cli.action.start(`Creating and Mounting Storage Volumes`);
-
-            const dirCommmands = that.generateDirCommands(
-              volumesFinal,
-              folderOwner,
-              folderGroup
-            );
-            const storageCommands = that.generateStorageCommands(
-              appName,
-              volumesFinal
-            );
-            // console.log(dirCommmands);
-            // console.log(storageCommands);
-            cmd.get(
-              `
-              ${dirCommmands}${storageCommands}
-              `,
-              function(err3: Error, data3: string, stderr3: any) {
-                if (err3) {
-                  that.handleError(err3);
-                }
-                cli.action.stop("Created and Mounted");
-                console.log(data3);
-                cli.action.start(
-                  `Downloading and deploying '${imageName}' from Docker`
-                );
-                cmd.get(
-                  `docker pull ${imageName}
-                    docker tag ${imageName} dokku/${appName}:latest
-                    dokku tags:deploy ${appName} latest
-                    dokku proxy:ports-add ${appName} http:80:${portResponse.mapPort80To}`,
-                  function(err4: Error, data4: string, stderr4: any) {
-                    if (err4) {
-                      that.handleError(err);
-                    }
-                    cli.action.stop("Completed");
-                    console.log(data4);
-                    // cli.action.start(
-                    //   `Tagging '${imageName}' as 'dokku/${appName}'`
-                    // );
-                    // cli.action.stop("Tagged");
-
-                    // cli.action.start(`Deploying image 'dokku/${appName}'`);
-                    // cli.action.stop("Deployed");
-
-                    // cli.action.start(
-                    //   `Proxying port ${portResponse.mapPort80To} to 80`
-                    // );
-                    // cli.action.stop("Deployed");
-                  }
-                );
-              }
-            );
-          }
-        );
-      });
+          return this.runCmd(`${dirCommmands} && ${storageCommands}`);
+        })
+        .then(() => {
+          cli.action.stop("Created and Mounted");
+          cli.action.start(
+            `Downloading and deploying '${imageName}' from Docker`
+          );
+          const pullTagDeployCmd = `sudo docker pull ${imageName} && sudo docker tag ${imageName} dokku/${appName}:latest && sudo dokku tags:deploy ${appName} latest && sudo dokku proxy:ports-add ${appName} http:80:${portResponse.mapPort80To}`;
+          this.log(pullTagDeployCmd);
+          return this.runCmd(pullTagDeployCmd);
+        })
+        .then(() => {
+          cli.action.stop("Completed");
+        })
+        .catch(error => {
+          console.log(`Peter was here 55 EEEEROR`);
+          this.error(error);
+        });
     }
   }
 }
